@@ -2,11 +2,14 @@ package auth
 
 import (
 	"context"
+	"errors"
 	sso "github.com/Rasikrr/protobuff/protos/gen/go/sso"
 	"github.com/go-playground/validator/v10"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"sso/internal/services/auth"
+	"sso/internal/storage"
 )
 
 const (
@@ -15,7 +18,7 @@ const (
 
 type Auth interface {
 	Login(ctx context.Context, email, password string, appID int) (token string, err error)
-	RegisterNewUser(ctx context.Context, email, password string) (userID int64, err error)
+	RegisterNewUser(ctx context.Context, email string, password []byte) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 }
 
@@ -44,7 +47,9 @@ func (s *serverAPI) Login(
 
 	token, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
 	if err != nil {
-		// TODO...
+		if errors.Is(err, auth.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -60,11 +65,13 @@ func (s *serverAPI) Register(
 	if err := s.validateRegister(req); err != nil {
 		return nil, err
 	}
-
-	userID, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), req.GetPassword())
+	// TODO change password to string
+	userID, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), []byte(req.GetPassword()))
 	if err != nil {
-		// TODO...
-		return nil, status.Errorf(codes.Internal, "internal error")
+		if errors.Is(err, auth.ErrUserExists) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return &sso.RegisterResponse{
 		UserId: userID,
@@ -80,7 +87,9 @@ func (s *serverAPI) IsAdmin(
 	}
 	isAdmin, err := s.auth.IsAdmin(ctx, req.GetUserId())
 	if err != nil {
-		// TODO...
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "invalid credentials")
+		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return &sso.IsAdminResponse{

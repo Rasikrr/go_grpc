@@ -3,8 +3,13 @@ package config
 import (
 	"flag"
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 	"os"
 	"time"
+)
+
+const (
+	dotenvPath = ".env"
 )
 
 type Config struct {
@@ -29,6 +34,9 @@ type StorageConfig struct {
 }
 
 func MustLoad() *Config {
+	if err := godotenv.Load(dotenvPath); err != nil {
+		panic(err)
+	}
 	path := fetchConfigPath()
 	if path == "" {
 		panic("config path is empty")
@@ -49,7 +57,6 @@ func fetchConfigPath() string {
 	Function to get config path from flag(or if there is no flag from .env)
 	Example: --config="path/to/config.yaml"
 	**/
-
 	flag.StringVar(&res, "config", "", "path to config file")
 	flag.Parse()
 	if res == "" {

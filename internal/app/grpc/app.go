@@ -20,13 +20,14 @@ type App struct {
 
 func New(
 	log *slog.Logger,
+	auth authgrpc.Auth,
 	port int,
 ) *App {
 	gRPCServer := grpc.NewServer()
 	// Creating validator
 	v := getValidator()
 
-	authgrpc.Register(gRPCServer, v)
+	authgrpc.Register(gRPCServer, auth, v)
 
 	return &App{
 		log:        log,
@@ -43,7 +44,6 @@ func (a *App) MustRun() {
 
 func (a *App) Run() error {
 	const op = "grpcapp.Run"
-	a.log.With(slog.String("op", op))
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
 	if err != nil {

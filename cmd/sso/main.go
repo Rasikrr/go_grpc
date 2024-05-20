@@ -19,6 +19,7 @@ const (
 
 func main() {
 	//TODO: init config
+
 	cfg := config.MustLoad()
 
 	//TODO: init logger(slog)
@@ -28,7 +29,7 @@ func main() {
 	)
 
 	//TODO: init app
-	application := app.New(log, cfg.GRPC.Port, cfg.TokenTTL)
+	application := app.New(log, &cfg.Storage, cfg.GRPC.Port, cfg.TokenTTL)
 
 	//TODO: start grpc-server
 
