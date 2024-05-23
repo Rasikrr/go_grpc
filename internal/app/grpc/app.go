@@ -24,7 +24,7 @@ func New(
 	port int,
 ) *App {
 	gRPCServer := grpc.NewServer()
-	// Creating validator
+
 	v := getValidator()
 
 	authgrpc.Register(gRPCServer, auth, v)

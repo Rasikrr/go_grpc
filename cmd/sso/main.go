@@ -18,20 +18,14 @@ const (
 // Run app: go run cmd/sso/main.go --config=./cmd/config/local.yaml
 
 func main() {
-	//TODO: init config
-
 	cfg := config.MustLoad()
 
-	//TODO: init logger(slog)
 	log := setupLogger(cfg.Env)
 	log.Info("starting application",
 		slog.String("env", cfg.Env),
 	)
 
-	//TODO: init app
 	application := app.New(log, &cfg.Storage, cfg.GRPC.Port, cfg.TokenTTL)
-
-	//TODO: start grpc-server
 
 	go application.GRPCSrv.MustRun()
 

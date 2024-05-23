@@ -52,15 +52,10 @@ func (s *Storage) SaveUser(ctx context.Context, email, passHash string) (int64, 
 	).Scan(&lastInsertedId)
 
 	if err != nil {
-		var psqlError pq.Error
-
-		if errors.Is(err, &psqlError) {
+		if _, ok := err.(*pq.Error); ok {
 			return 0, fmt.Errorf("%s: %w", op, storage.ErrUserExists)
 		}
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
 
-	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -102,7 +97,7 @@ func (s *Storage) App(ctx context.Context, appID int) (*models.App, error) {
 	app := new(models.App)
 	err := s.db.QueryRowx(`SELECT * FROM apps WHERE id=$1`, appID).StructScan(app)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if _, ok := err.(*pq.Error); ok {
 			return nil, fmt.Errorf("%s: %w", op, storage.ErrAppNotFound)
 		}
 		return nil, fmt.Errorf("%s: %w", op, err)

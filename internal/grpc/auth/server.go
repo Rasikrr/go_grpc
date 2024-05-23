@@ -47,7 +47,7 @@ func (s *serverAPI) Login(
 
 	token, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
 	if err != nil {
-		if errors.Is(err, auth.ErrInvalidCredentials) {
+		if errors.Is(err, auth.ErrInvalidCredentials) || errors.Is(err, auth.ErrInvalidAppId) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
 		}
 		return nil, status.Error(codes.Internal, "internal error")
@@ -65,7 +65,6 @@ func (s *serverAPI) Register(
 	if err := s.validateRegister(req); err != nil {
 		return nil, err
 	}
-	// TODO change password to string
 	userID, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), []byte(req.GetPassword()))
 	if err != nil {
 		if errors.Is(err, auth.ErrUserExists) {
@@ -106,7 +105,7 @@ func (s *serverAPI) validateLogin(req *sso.LoginRequest) error {
 		"required"); err != nil {
 		return status.Error(
 			codes.InvalidArgument,
-			"password must contain at least one upper, one digit and one spec.symbol")
+			"invalid credentials")
 	}
 	if req.GetAppId() == emptyValue {
 		return status.Error(codes.InvalidArgument, "app_id is required")

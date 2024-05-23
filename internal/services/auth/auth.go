@@ -77,10 +77,13 @@ func (a *Auth) Login(ctx context.Context, email, password string, appID int) (st
 
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		log.Info("invalid credentials", slog.String("error", err.Error()))
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 	app, err := a.appProvider.App(ctx, appID)
 	if err != nil {
+		if errors.Is(err, storage.ErrAppNotFound) {
+			return "", fmt.Errorf("%s: %w", op, ErrInvalidAppId)
+		}
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -110,7 +113,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password []byt
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
 			log.Warn("user already exists", slog.String("email", email))
-			return 0, fmt.Errorf("%s: %w", ErrUserExists)
+			return 0, fmt.Errorf("%s: %w", op, ErrUserExists)
 		}
 		log.Error("failed to save user", slog.String("error", err.Error()))
 		return 0, fmt.Errorf("%s: %w", op, err)

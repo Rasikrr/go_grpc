@@ -13,15 +13,12 @@ type App struct {
 	GRPCSrv *grpcapp.App
 }
 
-// TODO: Storage
-
 func New(
 	log *slog.Logger,
 	storageCfg *config.StorageConfig,
 	grpcPort int,
 	tokenTTL time.Duration,
 ) *App {
-	// Create storage
 	storage, err := postgres.New(storageCfg)
 	if err != nil {
 		panic(err)
